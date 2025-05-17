@@ -8,15 +8,16 @@ type ChannelCardProps = {
   logo: string;
   m3u8Url: string;
   isLive?: boolean;
+  useBrowserPlayer?: boolean;
 };
 
 // Define the component as a regular function first, then wrap it with memo
-function ChannelCard({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProps) {
+function ChannelCard({ id, name, logo, m3u8Url, isLive = true, useBrowserPlayer }: ChannelCardProps) {
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   
   const handleClick = () => {
-    navigate(`/watch/${id}`, { state: { channelName: name, m3u8Url } });
+    navigate(`/watch/${id}`, { state: { channelName: name, m3u8Url, useBrowserPlayer } });
   };
   
   return (
@@ -65,4 +66,3 @@ MemoizedChannelCard.displayName = 'ChannelCard';
 
 // Export the memoized component as default
 export default MemoizedChannelCard;
-

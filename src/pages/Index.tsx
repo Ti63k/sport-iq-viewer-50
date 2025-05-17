@@ -12,6 +12,7 @@ const Index = () => {
   const [isSearching, setIsSearching] = useState(false);
   
   const allChannels = getAllChannels();
+  const sscSportChannels = getChannelsByCategory('ssc-sport');
   const sportsChannels = getChannelsByCategory('sports');
   const newsChannels = getChannelsByCategory('news');
   const documentaryChannels = getChannelsByCategory('documentary');
@@ -38,14 +39,14 @@ const Index = () => {
       <Header onOpenSidebar={() => setSidebarOpen(true)} />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 container mx-auto px-4 py-2"> {/* Changed from py-4 to py-2 */}
-        <div className="mb-3"> {/* Changed from mb-4 to mb-3 */}
+      <main className="flex-1 container mx-auto px-4 py-2">
+        <div className="mb-3">
           <SearchBar onSearch={handleSearch} />
         </div>
         
         {isSearching ? (
-          <div className="mt-2"> {/* Changed from mt-4 to mt-2 */}
-            <h2 className="section-title mb-3">نتائج البحث</h2> {/* Changed from mb-4 to mb-3 */}
+          <div className="mt-2">
+            <h2 className="section-title mb-3">نتائج البحث</h2>
             {searchResults.length > 0 ? (
               <div className="channels-grid">
                 {searchResults.map((channel) => (
@@ -64,6 +65,14 @@ const Index = () => {
               id="all-channels"
               title="جميع القنوات"
               channels={allChannels}
+              viewType="scroll"
+              showAll={true}
+            />
+            
+            <CategorySection 
+              id="ssc-sport"
+              title="SSC SPORT"
+              channels={sscSportChannels}
               viewType="scroll"
               showAll={true}
             />

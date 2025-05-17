@@ -43,6 +43,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   
   const categories = [
     { id: 'sports', name: 'الرياضة', href: '#sports' },
+    { id: 'ssc-sport', name: 'SSC SPORT', href: '#ssc-sport' },
     { id: 'news', name: 'الإخبارية', href: '#news' },
     { id: 'documentary', name: 'الوثائقية', href: '#documentary' },
     { id: 'entertainment', name: 'الترفيه', href: '#entertainment' },

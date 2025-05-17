@@ -1,4 +1,3 @@
-
 export type Channel = {
   id: string;
   name: string;
@@ -6,9 +5,93 @@ export type Channel = {
   m3u8Url: string;
   isLive: boolean;
   category: string[];
+  useBrowserPlayer?: boolean; // New flag to indicate if we should use browser player
 };
 
 export const channels: Channel[] = [
+  // SSC SPORT Channels
+  {
+    id: 'ssc-news',
+    name: 'SSC NEWS',
+    logo: 'http://138.199.27.237:8080/SAUDIARABIA/ssc/sscnew.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc1',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-1',
+    name: 'SSC 1',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc1',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-2',
+    name: 'SSC 2',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc2',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-3',
+    name: 'SSC 3',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc3',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-4',
+    name: 'SSC 4',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc4',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-5',
+    name: 'SSC 5',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc_5',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-extra-1',
+    name: 'SSC EXTRA 1',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc_extra1',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-extra-2',
+    name: 'SSC EXTRA 2',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc_extra2',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+  {
+    id: 'ssc-extra-3',
+    name: 'SSC EXTRA 3',
+    logo: 'https://i.imgur.com/agc0IZF.png',
+    m3u8Url: 'https://www.ipslow.com/tv/canal.php?id=ssc_extra3',
+    isLive: true,
+    category: ['ssc-sport'],
+    useBrowserPlayer: true,
+  },
+
   // Sports Channels
   {
     id: 'ssc-1',

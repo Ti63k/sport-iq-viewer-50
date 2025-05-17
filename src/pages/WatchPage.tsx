@@ -53,6 +53,7 @@ const WatchPage = () => {
         logo: '',
         m3u8Url: location.state.m3u8Url,
         isLive: true,
+        useBrowserPlayer: location.state.useBrowserPlayer,
       });
       setIsLoading(false);
     } else {
@@ -110,11 +111,23 @@ const WatchPage = () => {
           <h1 className="text-2xl font-bold">{channel.name}</h1>
         </div>
         
-        {/* Using our updated VideoPlayer component */}
-        <VideoPlayer 
-          m3u8Url={channel.m3u8Url} 
-          title={channel.name}
-        />
+        {channel.useBrowserPlayer ? (
+          <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+            <iframe 
+              src={channel.m3u8Url}
+              title={channel.name}
+              className="w-full h-full border-0"
+              allowFullScreen
+              allow="autoplay; encrypted-media; picture-in-picture"
+              loading="lazy"
+            ></iframe>
+          </div>
+        ) : (
+          <VideoPlayer 
+            m3u8Url={channel.m3u8Url} 
+            title={channel.name}
+          />
+        )}
         
         <div className="mb-6 mt-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
