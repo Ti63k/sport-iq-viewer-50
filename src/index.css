@@ -125,11 +125,11 @@
   }
   
   .category-section {
-    @apply py-6;
+    @apply py-3; /* Changed from py-6 to py-3 to reduce vertical spacing */
   }
   
   .category-header {
-    @apply flex justify-between items-center mb-4;
+    @apply flex justify-between items-center mb-2; /* Changed from mb-4 to mb-2 */
   }
   
   .channels-grid {
@@ -137,7 +137,7 @@
   }
   
   .channels-scroll {
-    @apply flex overflow-x-auto py-2 gap-4 pb-4 snap-x;
+    @apply flex overflow-x-auto py-1 gap-4 pb-3 snap-x; /* Changed from py-2 pb-4 to py-1 pb-3 */
   }
   
   .channel-scroll-item {

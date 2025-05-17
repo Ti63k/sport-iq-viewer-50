@@ -31,7 +31,7 @@ const CategorySection = ({
   const displayChannels = showAll ? channels : (viewType === 'grid' ? channels.slice(0, 10) : channels.slice(0, 10));
   
   return (
-    <section id={id} className="category-section mb-10">
+    <section id={id} className="category-section mb-6"> {/* Changed from mb-10 to mb-6 */}
       <div className="category-header flex justify-between items-center mb-4">
         <h2 className="section-title text-xl font-bold">{title}</h2>
         <Link to={`/category/${id}`} className="more-link flex items-center text-iqpurple hover:text-iqred transition-colors">

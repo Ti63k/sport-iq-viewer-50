@@ -38,14 +38,14 @@ const Index = () => {
       <Header onOpenSidebar={() => setSidebarOpen(true)} />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="mb-6">
+      <main className="flex-1 container mx-auto px-4 py-4"> {/* Changed from py-6 to py-4 */}
+        <div className="mb-4"> {/* Changed from mb-6 to mb-4 */}
           <SearchBar onSearch={handleSearch} />
         </div>
         
         {isSearching ? (
-          <div className="mt-6">
-            <h2 className="section-title mb-6">نتائج البحث</h2>
+          <div className="mt-4"> {/* Changed from mt-6 to mt-4 */}
+            <h2 className="section-title mb-4">نتائج البحث</h2> {/* Changed from mb-6 to mb-4 */}
             {searchResults.length > 0 ? (
               <div className="channels-grid">
                 {searchResults.map((channel) => (
@@ -60,7 +60,6 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Changed from grid to scroll view */}
             <CategorySection 
               id="all-channels"
               title="جميع القنوات"
