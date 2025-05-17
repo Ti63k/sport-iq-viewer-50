@@ -9,15 +9,23 @@ type ChannelCardProps = {
   m3u8Url: string;
   isLive?: boolean;
   useBrowserPlayer?: boolean;
+  category: string[];
 };
 
 // Define the component as a regular function first, then wrap it with memo
-function ChannelCard({ id, name, logo, m3u8Url, isLive = true, useBrowserPlayer }: ChannelCardProps) {
+function ChannelCard({ id, name, logo, m3u8Url, isLive = true, useBrowserPlayer, category }: ChannelCardProps) {
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   
   const handleClick = () => {
-    navigate(`/watch/${id}`, { state: { channelName: name, m3u8Url, useBrowserPlayer } });
+    // Check if the channel is in the SSC-SPORT category
+    if (category.includes('ssc-sport')) {
+      // Open all SSC SPORT channels (including SSC 1) in external window
+      window.open(m3u8Url, '_blank', 'noopener,noreferrer');
+    } else {
+      // For all other channels including SSC 1 in sports category, navigate normally
+      navigate(`/watch/${id}`, { state: { channelName: name, m3u8Url, useBrowserPlayer } });
+    }
   };
   
   return (
