@@ -7,8 +7,6 @@ import ChannelCard from '@/components/ChannelCard';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { getChannelById, getChannelsByCategory } from '@/data/mockChannels';
 import { ChevronLeft } from 'lucide-react';
-import Footer from '@/components/Footer';
-import BackToTop from '@/components/BackToTop';
 
 const WatchPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,8 +58,6 @@ const WatchPage = () => {
             </Link>
           </div>
         </main>
-        
-        <Footer />
       </div>
     );
   }
@@ -79,7 +75,7 @@ const WatchPage = () => {
           <h1 className="text-2xl font-bold">{channel.name}</h1>
         </div>
         
-        {/* Using our VideoPlayer component */}
+        {/* Using our new VideoPlayer component */}
         <VideoPlayer 
           m3u8Url={channel.m3u8Url} 
           title={channel.name}
@@ -110,8 +106,11 @@ const WatchPage = () => {
         )}
       </main>
       
-      <BackToTop />
-      <Footer />
+      <footer className="bg-white dark:bg-background border-t py-4">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-600 dark:text-gray-300">IQ SPORT © 2025</p>
+        </div>
+      </footer>
     </div>
   );
 };

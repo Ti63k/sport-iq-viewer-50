@@ -6,8 +6,6 @@ import Sidebar from '@/components/Sidebar';
 import ChannelCard from '@/components/ChannelCard';
 import { getChannelsByCategory } from '@/data/mockChannels';
 import { ChevronLeft } from 'lucide-react';
-import Footer from '@/components/Footer';
-import BackToTop from '@/components/BackToTop';
 
 const CategoryPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -66,8 +64,11 @@ const CategoryPage = () => {
         )}
       </main>
       
-      <BackToTop />
-      <Footer />
+      <footer className="bg-white dark:bg-background border-t py-4">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-600 dark:text-gray-300">IQ SPORT © 2025</p>
+        </div>
+      </footer>
     </div>
   );
 };
