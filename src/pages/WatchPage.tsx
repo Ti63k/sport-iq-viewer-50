@@ -5,9 +5,8 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import ChannelCard from '@/components/ChannelCard';
 import { getChannelById, getChannelsByCategory } from '@/data/mockChannels';
-import { ChevronLeft, Play, Pause, Volume, VolumeOff, Maximize, Minimize } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import Hls from 'hls.js';
 
 const WatchPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,11 +16,6 @@ const WatchPage = () => {
   const [channel, setChannel] = useState<any>(null);
   const [relatedChannels, setRelatedChannels] = useState<any[]>([]);
   const { toast } = useToast();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
   
   // Get channel info either from location state or by ID
   useEffect(() => {
@@ -52,149 +46,26 @@ const WatchPage = () => {
     }
   }, [channelId, location.state]);
   
-  // Setup HLS player when channel changes
+  // Handle video errors
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !channel?.m3u8Url) return;
-
-    // Clean up any existing HLS instance
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    // Initialize HLS if supported
-    if (Hls.isSupported()) {
-      console.log('HLS is supported, initializing player for URL:', channel.m3u8Url);
-      const hls = new Hls({
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
-        startLevel: -1, // Auto level selection
-        debug: false
+    
+    const handleError = () => {
+      toast({
+        title: "خطأ في التشغيل",
+        description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
+        variant: "destructive",
       });
-      
-      hlsRef.current = hls;
-      hls.loadSource(channel.m3u8Url);
-      hls.attachMedia(video);
-      
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest parsed, starting playback');
-        video.play()
-          .then(() => {
-            setIsPlaying(true);
-            console.log('Playback started successfully');
-          })
-          .catch(error => {
-            console.error('Error starting playback:', error);
-            toast({
-              title: "خطأ في التشغيل",
-              description: "يرجى النقر على زر التشغيل للبدء.",
-              variant: "destructive",
-            });
-          });
-      });
-      
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS error:', data);
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.log('Fatal network error, trying to recover');
-              hls.startLoad(); // Try to recover on network error
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.log('Fatal media error, trying to recover');
-              hls.recoverMediaError(); // Try to recover on media error
-              break;
-            default:
-              // Cannot recover
-              console.error('Fatal error, cannot recover', data);
-              toast({
-                title: "خطأ في التشغيل",
-                description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
-                variant: "destructive",
-              });
-              break;
-          }
-        }
-      });
-      
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // For Safari and iOS devices which have native HLS support
-      console.log('Using native HLS support for URL:', channel.m3u8Url);
-      video.src = channel.m3u8Url;
-      video.play()
-        .then(() => {
-          setIsPlaying(true);
-          console.log('Playback started successfully with native support');
-        })
-        .catch(error => {
-          console.error('Error starting playback with native support:', error);
-          toast({
-            title: "خطأ في التشغيل",
-            description: "يرجى النقر على زر التشغيل للبدء.",
-            variant: "destructive",
-          });
-        });
-    }
-
-    return () => {
-      // Clean up HLS instance on unmount
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
     };
-  }, [channel, toast]);
-  
-  // Video control handlers
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
     
-    if (video.paused) {
-      video.play()
-        .then(() => setIsPlaying(true))
-        .catch(error => {
-          console.error('Error playing video:', error);
-          toast({
-            title: "خطأ في التشغيل",
-            description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
-            variant: "destructive",
-          });
-        });
-    } else {
-      video.pause();
-      setIsPlaying(false);
+    if (video) {
+      video.addEventListener('error', handleError);
+      
+      return () => {
+        video.removeEventListener('error', handleError);
+      };
     }
-  };
-  
-  const toggleMute = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    
-    video.muted = !video.muted;
-    setIsMuted(video.muted);
-  };
-  
-  const toggleFullscreen = () => {
-    const container = videoContainerRef.current;
-    if (!container) return;
-
-    if (!document.fullscreenElement) {
-      container.requestFullscreen().then(() => {
-        setIsFullscreen(true);
-      }).catch(err => {
-        console.error('Failed to enter fullscreen mode:', err);
-      });
-    } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false);
-      }).catch(err => {
-        console.error('Failed to exit fullscreen mode:', err);
-      });
-    }
-  };
+  }, [toast]);
   
   if (!channel) {
     return (
@@ -227,44 +98,19 @@ const WatchPage = () => {
           <h1 className="text-2xl font-bold">{channel.name}</h1>
         </div>
         
-        <div ref={videoContainerRef} className="aspect-video bg-black rounded-xl overflow-hidden mb-6 relative">
+        <div className="aspect-video bg-black rounded-xl overflow-hidden mb-6">
+          {/* This is a video player component. In a real app, you'd use a proper video player library */}
           <video 
             ref={videoRef}
             className="w-full h-full"
+            controls
+            autoPlay
             playsInline
             poster="https://via.placeholder.com/1280x720/000000/FFFFFF?text=Loading..."
-          />
-          
-          {/* Custom video controls */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4 rtl:space-x-reverse">
-              <button 
-                onClick={togglePlay} 
-                className="text-white hover:text-iqpurple transition"
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-              >
-                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-              </button>
-              
-              <button 
-                onClick={toggleMute} 
-                className="text-white hover:text-iqpurple transition"
-                aria-label={isMuted ? 'Unmute' : 'Mute'}
-              >
-                {isMuted ? <VolumeOff size={24} /> : <Volume size={24} />}
-              </button>
-            </div>
-            
-            <div>
-              <button 
-                onClick={toggleFullscreen} 
-                className="text-white hover:text-iqpurple transition"
-                aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              >
-                {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-              </button>
-            </div>
-          </div>
+          >
+            <source src={channel.m3u8Url} type="application/x-mpegURL" />
+            Your browser does not support video playback.
+          </video>
         </div>
         
         <div className="mb-6">
