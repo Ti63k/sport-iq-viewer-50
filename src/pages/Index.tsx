@@ -60,12 +60,13 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Removed the heading "جميع القنوات المتاحة" as requested */}
+            {/* Modified to display all channels in a grid view instead of scroll view */}
             <CategorySection 
               id="all-channels"
               title="جميع القنوات"
               channels={allChannels}
-              viewType="scroll"
+              viewType="grid"
+              showAll={true}
             />
             
             <CategorySection 
