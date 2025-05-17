@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import ChannelCard from '@/components/ChannelCard';
@@ -13,14 +13,18 @@ const WatchPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { channelId } = useParams<{ channelId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [channel, setChannel] = useState<any>(null);
   const [relatedChannels, setRelatedChannels] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const videoKey = useRef(Date.now());
   
   // Get channel info either from location state or by ID
   useEffect(() => {
     setIsLoading(true);
+    // Reset video key to force remounting the player
+    videoKey.current = Date.now();
     
     if (channelId) {
       const channelData = getChannelById(channelId);
@@ -29,7 +33,7 @@ const WatchPage = () => {
         setChannel(channelData);
         
         // Get related channels from the same category
-        if (channelData.category.length > 0) {
+        if (channelData.category && channelData.category.length > 0) {
           const category = channelData.category[0];
           const related = getChannelsByCategory(category)
             .filter(c => c.id !== channelId)
@@ -54,12 +58,25 @@ const WatchPage = () => {
         m3u8Url: location.state.m3u8Url,
         isLive: true,
         useBrowserPlayer: location.state.useBrowserPlayer,
+        category: []
       });
       setIsLoading(false);
     } else {
       setIsLoading(false);
     }
   }, [channelId, location.state, toast]);
+  
+  // Handle related channel click
+  const handleRelatedChannelClick = (relatedChannel: any) => {
+    // For SSC-SPORT category channels, open in a new window
+    if (relatedChannel.category?.includes('ssc-sport')) {
+      window.open(relatedChannel.m3u8Url, '_blank', 'noopener,noreferrer');
+    } else {
+      // For other channels, navigate to their watch page
+      // Use replace instead of push to replace current history entry
+      navigate(`/watch/${relatedChannel.id}`, { replace: true });
+    }
+  };
   
   if (isLoading) {
     return (
@@ -120,10 +137,12 @@ const WatchPage = () => {
               allowFullScreen
               allow="autoplay; encrypted-media; picture-in-picture"
               loading="lazy"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
             ></iframe>
           </div>
         ) : (
           <VideoPlayer 
+            key={videoKey.current}
             m3u8Url={channel.m3u8Url} 
             title={channel.name}
           />
@@ -138,16 +157,23 @@ const WatchPage = () => {
         {relatedChannels.length > 0 && (
           <div className="mt-10">
             <h2 className="section-title mb-6">قنوات مشابهة</h2>
-            <div className="channels-grid">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {relatedChannels.map((relatedChannel) => (
-                <ChannelCard
-                  key={relatedChannel.id}
-                  id={relatedChannel.id}
-                  name={relatedChannel.name}
-                  logo={relatedChannel.logo}
-                  m3u8Url={relatedChannel.m3u8Url}
-                  isLive={relatedChannel.isLive}
-                />
+                <div 
+                  key={relatedChannel.id} 
+                  onClick={() => handleRelatedChannelClick(relatedChannel)}
+                  className="cursor-pointer"
+                >
+                  <ChannelCard
+                    id={relatedChannel.id}
+                    name={relatedChannel.name}
+                    logo={relatedChannel.logo}
+                    m3u8Url={relatedChannel.m3u8Url}
+                    isLive={relatedChannel.isLive}
+                    useBrowserPlayer={relatedChannel.useBrowserPlayer}
+                    category={relatedChannel.category || []}
+                  />
+                </div>
               ))}
             </div>
           </div>

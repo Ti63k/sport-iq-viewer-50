@@ -54,6 +54,7 @@ const CategoryPage = () => {
                 logo={channel.logo}
                 m3u8Url={channel.m3u8Url}
                 isLive={channel.isLive}
+                category={channel.category || []}
               />
             ))}
           </div>
