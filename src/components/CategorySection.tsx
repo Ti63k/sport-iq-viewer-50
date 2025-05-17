@@ -28,20 +28,20 @@ const CategorySection = ({
 }: CategorySectionProps) => {
   if (channels.length === 0) return null;
   
-  const displayChannels = showAll ? channels : (viewType === 'grid' ? channels.slice(0, 10) : channels);
+  const displayChannels = showAll ? channels : (viewType === 'grid' ? channels.slice(0, 10) : channels.slice(0, 10));
   
   return (
-    <section id={id} className="category-section">
-      <div className="category-header">
-        <h2 className="section-title">{title}</h2>
-        <Link to={`/category/${id}`} className="more-link">
+    <section id={id} className="category-section mb-10">
+      <div className="category-header flex justify-between items-center mb-4">
+        <h2 className="section-title text-xl font-bold">{title}</h2>
+        <Link to={`/category/${id}`} className="more-link flex items-center text-iqpurple hover:text-iqred transition-colors">
           <span>المزيد</span>
           <ChevronLeft size={16} />
         </Link>
       </div>
       
       {viewType === 'grid' ? (
-        <div className="channels-grid">
+        <div className="channels-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {displayChannels.map((channel) => (
             <ChannelCard 
               key={channel.id}
@@ -54,9 +54,9 @@ const CategorySection = ({
           ))}
         </div>
       ) : (
-        <div className="channels-scroll">
+        <div className="channels-scroll flex overflow-x-auto pb-4 gap-4 snap-x">
           {displayChannels.map((channel) => (
-            <div key={channel.id} className="channel-scroll-item">
+            <div key={channel.id} className="channel-scroll-item flex-shrink-0 w-40 snap-start">
               <ChannelCard 
                 id={channel.id}
                 name={channel.name}

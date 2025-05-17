@@ -22,6 +22,7 @@ const CategoryPage = () => {
   // Map category IDs to Arabic titles
   const categoryTitles: Record<string, string> = {
     'sports': 'الرياضة',
+    'news': 'الإخبارية',
     'documentary': 'الوثائقية',
     'entertainment': 'الترفيه',
     'religious': 'دينية',
