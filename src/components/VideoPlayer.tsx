@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import 'plyr/dist/plyr.css';
 import Plyr from 'plyr';
+import './videoPlayer.css';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -111,51 +112,59 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
           hls.attachMedia(videoRef.current);
           
           hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-            hls?.loadSource(m3u8Url);
+            // Fixed: Only call loadSource if hls is not null
+            if (hls) {
+              hls.loadSource(m3u8Url);
             
-            hls?.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-              // Extract available qualities
-              const availableLevels = data.levels;
-              if (availableLevels.length > 1) {
-                const qualityOptions = availableLevels
-                  .map((level, index) => ({
-                    height: level.height,
-                    index
-                  }))
-                  .sort((a, b) => b.height - a.height); // Sort from highest to lowest
-                
-                setQualities(qualityOptions);
-                
-                // Set to auto by default
-                hls?.currentLevel = -1;
-                setCurrentQuality(-1);
-              }
-              
-              // Auto play
-              videoRef.current?.play().catch((e) => {
-                console.log("Auto-play was prevented:", e);
-                // Some browsers require user interaction, show play button prominently
-              });
-            });
-            
-            hls?.on(Hls.Events.ERROR, (event, data) => {
-              if (data.fatal) {
-                switch (data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    // Try to recover network error
-                    console.log('Network error, trying to recover...');
-                    hls?.startLoad();
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    console.log('Media error, trying to recover...');
-                    hls?.recoverMediaError();
-                    break;
-                  default:
-                    handlePlaybackError();
-                    break;
+              hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+                // Extract available qualities
+                const availableLevels = data.levels;
+                if (availableLevels.length > 1) {
+                  const qualityOptions = availableLevels
+                    .map((level, index) => ({
+                      height: level.height,
+                      index
+                    }))
+                    .sort((a, b) => b.height - a.height); // Sort from highest to lowest
+                  
+                  setQualities(qualityOptions);
+                  
+                  // Set to auto by default
+                  if (hls) {
+                    hls.currentLevel = -1;
+                  }
+                  setCurrentQuality(-1);
                 }
-              }
-            });
+                
+                // Auto play
+                videoRef.current?.play().catch((e) => {
+                  console.log("Auto-play was prevented:", e);
+                  // Some browsers require user interaction, show play button prominently
+                });
+              });
+            }
+            
+            // Fixed: Only add event listeners if hls is not null
+            if (hls) {
+              hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                  switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                      // Try to recover network error
+                      console.log('Network error, trying to recover...');
+                      hls?.startLoad();
+                      break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                      console.log('Media error, trying to recover...');
+                      hls?.recoverMediaError();
+                      break;
+                    default:
+                      handlePlaybackError();
+                      break;
+                  }
+                }
+              });
+            }
           });
           
           hlsRef.current = hls;
@@ -353,53 +362,6 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
           </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Custom CSS for Plyr */}
-      <style jsx global>{`
-        /* Custom Plyr Styling for IQ Sport */
-        .plyr--full-ui {
-          --plyr-color-main: #5B3CC4;
-          --plyr-range-thumb-background: #5B3CC4;
-          --plyr-range-fill-background: #5B3CC4;
-          --plyr-video-control-background-hover: rgba(91, 60, 196, 0.8);
-        }
-        
-        .plyr__controls {
-          border-radius: 0.5rem;
-          background: rgba(0, 0, 0, 0.8) !important;
-        }
-        
-        .plyr__control--overlaid {
-          background: #5B3CC4 !important;
-        }
-        
-        .plyr__menu__container {
-          background: #1F1F1F !important;
-          border-radius: 0.5rem !important;
-        }
-        
-        .plyr__menu__container .plyr__control {
-          color: white !important;
-        }
-        
-        .plyr__menu__container .plyr__control--forward {
-          border-color: #333 !important;
-        }
-        
-        .plyr__menu__container .plyr__control--back {
-          border-color: #333 !important;
-        }
-        
-        .plyr--video .plyr__controls {
-          padding: 12px 10px 10px 10px !important;
-        }
-        
-        .plyr__custom-quality {
-          font-weight: bold;
-          font-size: 14px;
-          color: white;
-        }
-      `}</style>
       
       {/* Fallback for unsupported browsers */}
       <noscript>
