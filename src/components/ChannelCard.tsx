@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type ChannelCardProps = {
@@ -10,7 +10,7 @@ type ChannelCardProps = {
   isLive?: boolean;
 };
 
-const ChannelCard = ({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProps) => {
+const ChannelCard = memo(({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProps) => {
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   
@@ -19,7 +19,11 @@ const ChannelCard = ({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProp
   };
   
   return (
-    <div className="channel-card cursor-pointer transform transition-transform hover:scale-105" onClick={handleClick}>
+    <div 
+      className="channel-card cursor-pointer transform transition-transform hover:scale-105" 
+      onClick={handleClick}
+      aria-label={`Watch ${name}`}
+    >
       <div className="p-2 relative">
         {isLive && (
           <span className="live-badge absolute top-3 right-3 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full z-10">
@@ -34,6 +38,7 @@ const ChannelCard = ({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProp
                 alt={name} 
                 className="channel-logo max-h-full max-w-full object-contain" 
                 onError={() => setImageError(true)}
+                loading="lazy"
               />
             </div>
           ) : (
@@ -49,6 +54,8 @@ const ChannelCard = ({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProp
       </div>
     </div>
   );
-};
+});
+
+ChannelCard.displayName = 'ChannelCard';
 
 export default ChannelCard;

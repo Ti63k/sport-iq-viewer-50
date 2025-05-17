@@ -1,11 +1,10 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import ChannelCard from '@/components/ChannelCard';
 import { getChannelById, getChannelsByCategory } from '@/data/mockChannels';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 const WatchPage = () => {
@@ -15,6 +14,7 @@ const WatchPage = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [channel, setChannel] = useState<any>(null);
   const [relatedChannels, setRelatedChannels] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
   // Get channel info either from location state or by ID
@@ -46,11 +46,12 @@ const WatchPage = () => {
     }
   }, [channelId, location.state]);
   
-  // Handle video errors
+  // Handle video events
   useEffect(() => {
     const video = videoRef.current;
     
     const handleError = () => {
+      setIsLoading(false);
       toast({
         title: "خطأ في التشغيل",
         description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
@@ -58,14 +59,43 @@ const WatchPage = () => {
       });
     };
     
+    const handlePlay = () => {
+      setIsLoading(false);
+    };
+    
+    const handleWaiting = () => {
+      setIsLoading(true);
+    };
+    
+    const handleCanPlay = () => {
+      // Keep loading for a short time to buffer more content before showing
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    };
+    
     if (video) {
       video.addEventListener('error', handleError);
+      video.addEventListener('play', handlePlay);
+      video.addEventListener('waiting', handleWaiting);
+      video.addEventListener('canplay', handleCanPlay);
+      
+      // Set a timeout to clear loading state if stuck
+      const loadingTimeout = setTimeout(() => {
+        if (isLoading) {
+          setIsLoading(false);
+        }
+      }, 10000);
       
       return () => {
         video.removeEventListener('error', handleError);
+        video.removeEventListener('play', handlePlay);
+        video.removeEventListener('waiting', handleWaiting);
+        video.removeEventListener('canplay', handleCanPlay);
+        clearTimeout(loadingTimeout);
       };
     }
-  }, [toast]);
+  }, [toast, isLoading]);
   
   if (!channel) {
     return (
@@ -98,14 +128,25 @@ const WatchPage = () => {
           <h1 className="text-2xl font-bold">{channel.name}</h1>
         </div>
         
-        <div className="aspect-video bg-black rounded-xl overflow-hidden mb-6">
-          {/* This is a video player component. In a real app, you'd use a proper video player library */}
+        <div className="aspect-video bg-black rounded-xl overflow-hidden mb-6 relative">
+          {/* Loading overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+              <div className="text-center text-white">
+                <Loader2 className="h-12 w-12 mx-auto animate-spin mb-2" />
+                <p className="text-sm">جاري تحميل البث المباشر...</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Video player */}
           <video 
             ref={videoRef}
             className="w-full h-full"
             controls
             autoPlay
             playsInline
+            preload="auto"
             poster="https://via.placeholder.com/1280x720/000000/FFFFFF?text=Loading..."
           >
             <source src={channel.m3u8Url} type="application/x-mpegURL" />
