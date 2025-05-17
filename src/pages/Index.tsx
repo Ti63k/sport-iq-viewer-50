@@ -111,6 +111,7 @@ const Index = () => {
               title="VODU"
               channels={voduChannels}
               viewType="scroll"
+              showAll={true}
             />
           </>
         )}
