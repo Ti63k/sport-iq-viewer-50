@@ -34,8 +34,8 @@ const Header = ({ onOpenSidebar }: HeaderProps) => {
   
   return (
     <header className="sticky top-0 z-50 w-full bg-white dark:bg-background border-b py-3 px-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="grid grid-cols-3 items-center">
+        <div className="flex items-center">
           <Button 
             variant="ghost" 
             size="icon"
@@ -44,15 +44,16 @@ const Header = ({ onOpenSidebar }: HeaderProps) => {
           >
             <Menu size={20} />
           </Button>
-          <div className="flex items-center gap-1">
-            <span className="logo-colored">
-              <span className="iq">IQ</span>
-              <span className="sport">SPORT</span>
-            </span>
+        </div>
+        
+        <div className="flex items-center justify-center">
+          <div className="logo-colored">
+            <span className="iq">IQ</span>
+            <span className="sport">SPORT</span>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <Button 
             variant="ghost" 
             size="icon"
