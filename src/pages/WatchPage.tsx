@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -15,7 +16,9 @@ const WatchPage = () => {
   const [channel, setChannel] = useState<any>(null);
   const [relatedChannels, setRelatedChannels] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const { toast } = useToast();
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get channel info either from location state or by ID
   useEffect(() => {
@@ -46,12 +49,34 @@ const WatchPage = () => {
     }
   }, [channelId, location.state]);
   
-  // Handle video events
+  // Simulate progress loading when starting to load the stream
+  useEffect(() => {
+    if (isLoading && channel) {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 5;
+        if (progress > 90) {
+          clearInterval(interval);
+        }
+        setLoadingProgress(progress);
+      }, 100);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isLoading, channel]);
+  
+  // Handle video events with more efficient event handling
   useEffect(() => {
     const video = videoRef.current;
     
     const handleError = () => {
       setIsLoading(false);
+      setLoadingProgress(0);
+      
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      
       toast({
         title: "خطأ في التشغيل",
         description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
@@ -60,7 +85,11 @@ const WatchPage = () => {
     };
     
     const handlePlay = () => {
-      setIsLoading(false);
+      setLoadingProgress(100);
+      // Use setTimeout to create a smoother transition
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 300);
     };
     
     const handleWaiting = () => {
@@ -68,10 +97,38 @@ const WatchPage = () => {
     };
     
     const handleCanPlay = () => {
-      // Keep loading for a short time to buffer more content before showing
-      setTimeout(() => {
+      setLoadingProgress(95);
+      // Give a little bit of time for buffering, shorter than before
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      loadingTimeoutRef.current = setTimeout(() => {
+        if (videoRef.current?.paused) {
+          videoRef.current.play()
+            .catch(e => console.log("Auto-play was prevented:", e));
+        }
+        setLoadingProgress(100);
         setIsLoading(false);
-      }, 500);
+      }, 300);
+    };
+    
+    const handleProgress = () => {
+      if (video && video.buffered.length > 0) {
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+        const duration = video.duration;
+        
+        // Only for non-live streams with a finite duration
+        if (duration && duration !== Infinity && !isNaN(duration)) {
+          const loadedPercentage = (bufferedEnd / duration) * 100;
+          setLoadingProgress(Math.min(loadedPercentage, 100));
+        } else {
+          // For live streams or when duration is not available
+          if (bufferedEnd > 0) {
+            setLoadingProgress(100);
+            setIsLoading(false);
+          }
+        }
+      }
     };
     
     if (video) {
@@ -79,20 +136,32 @@ const WatchPage = () => {
       video.addEventListener('play', handlePlay);
       video.addEventListener('waiting', handleWaiting);
       video.addEventListener('canplay', handleCanPlay);
+      video.addEventListener('progress', handleProgress);
       
-      // Set a timeout to clear loading state if stuck
-      const loadingTimeout = setTimeout(() => {
+      // Set a timeout to clear loading state if stuck for too long
+      loadingTimeoutRef.current = setTimeout(() => {
         if (isLoading) {
-          setIsLoading(false);
+          // Try to play anyway after a timeout
+          if (video.readyState >= 3) {
+            video.play()
+              .then(() => setIsLoading(false))
+              .catch(() => {}); // Silent catch
+          } else {
+            setIsLoading(false);
+          }
         }
-      }, 10000);
+      }, 8000); // Reduced from 10s to 8s
       
       return () => {
         video.removeEventListener('error', handleError);
         video.removeEventListener('play', handlePlay);
         video.removeEventListener('waiting', handleWaiting);
         video.removeEventListener('canplay', handleCanPlay);
-        clearTimeout(loadingTimeout);
+        video.removeEventListener('progress', handleProgress);
+        
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
       };
     }
   }, [toast, isLoading]);
@@ -129,17 +198,24 @@ const WatchPage = () => {
         </div>
         
         <div className="aspect-video bg-black rounded-xl overflow-hidden mb-6 relative">
-          {/* Loading overlay */}
+          {/* Loading overlay with progress bar */}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-              <div className="text-center text-white">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-10">
+              <div className="text-center text-white w-full px-6 max-w-md">
                 <Loader2 className="h-12 w-12 mx-auto animate-spin mb-2" />
-                <p className="text-sm">جاري تحميل البث المباشر...</p>
+                <p className="text-sm mb-2">جاري تحميل البث المباشر...</p>
+                {/* Progress bar */}
+                <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-iqpurple h-full transition-all duration-300 ease-out"
+                    style={{ width: `${loadingProgress}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
           )}
           
-          {/* Video player */}
+          {/* Video player with optimized attributes */}
           <video 
             ref={videoRef}
             className="w-full h-full"
