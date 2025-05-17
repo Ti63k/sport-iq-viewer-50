@@ -18,12 +18,15 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
   const { toast } = useToast();
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
+  const maxRetries = 3;
 
   useEffect(() => {
     // Reset state on URL change
     setIsLoading(true);
     setLoadingProgress(0);
     setHasError(false);
+    retryCountRef.current = 0;
     
     return () => {
       // Clean up all timers when component unmounts or URL changes
@@ -62,7 +65,7 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
         setLoadingProgress(100);
         setIsLoading(false);
       }
-    }, 6000); // Reduced from 8s to 6s for better UX
+    }, 6000); // 6s for better UX
 
     return () => {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
@@ -76,18 +79,34 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
     if (!video) return;
 
     const handleError = () => {
-      setIsLoading(false);
-      setLoadingProgress(0);
-      setHasError(true);
-      
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      
-      toast({
-        title: "خطأ في التشغيل",
-        description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
-        variant: "destructive",
-      });
+      if (retryCountRef.current < maxRetries) {
+        // Auto-retry a few times before showing error
+        retryCountRef.current += 1;
+        console.log(`Auto-retrying (${retryCountRef.current}/${maxRetries})...`);
+        
+        // Short timeout before retry
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(() => {
+              // Silent catch
+            });
+          }
+        }, 1000);
+      } else {
+        setIsLoading(false);
+        setLoadingProgress(0);
+        setHasError(true);
+        
+        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        
+        toast({
+          title: "خطأ في التشغيل",
+          description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
+          variant: "destructive",
+        });
+      }
     };
     
     const handlePlay = () => {
@@ -122,7 +141,7 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
           setLoadingProgress(100);
           setIsLoading(false);
         }
-      }, 200); // Reduced from 300ms to 200ms for faster response
+      }, 200);
     };
     
     const handleProgress = () => {
@@ -174,6 +193,7 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
     setHasError(false);
     setIsLoading(true);
     setLoadingProgress(0);
+    retryCountRef.current = 0;
     
     // Short timeout to ensure DOM has updated
     setTimeout(() => {

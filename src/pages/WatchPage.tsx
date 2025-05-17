@@ -7,6 +7,7 @@ import ChannelCard from '@/components/ChannelCard';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { getChannelById, getChannelsByCategory } from '@/data/mockChannels';
 import { ChevronLeft } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const WatchPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,9 +15,13 @@ const WatchPage = () => {
   const location = useLocation();
   const [channel, setChannel] = useState<any>(null);
   const [relatedChannels, setRelatedChannels] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   // Get channel info either from location state or by ID
   useEffect(() => {
+    setIsLoading(true);
+    
     if (channelId) {
       const channelData = getChannelById(channelId);
       
@@ -32,6 +37,14 @@ const WatchPage = () => {
           
           setRelatedChannels(related);
         }
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
+        toast({
+          title: "خطأ",
+          description: "القناة غير موجودة",
+          variant: "destructive",
+        });
       }
     } else if (location.state?.channelName && location.state?.m3u8Url) {
       setChannel({
@@ -41,8 +54,30 @@ const WatchPage = () => {
         m3u8Url: location.state.m3u8Url,
         isLive: true,
       });
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
     }
-  }, [channelId, location.state]);
+  }, [channelId, location.state, toast]);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header onOpenSidebar={() => setSidebarOpen(true)} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <main className="flex-1 container mx-auto px-4 py-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-8 w-64 bg-gray-300 dark:bg-gray-700 rounded mb-4"></div>
+              <div className="h-[300px] w-full max-w-3xl bg-gray-300 dark:bg-gray-700 rounded mb-4"></div>
+              <div className="h-4 w-48 bg-gray-300 dark:bg-gray-700 rounded mb-2"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   if (!channel) {
     return (
@@ -75,7 +110,7 @@ const WatchPage = () => {
           <h1 className="text-2xl font-bold">{channel.name}</h1>
         </div>
         
-        {/* Using our new VideoPlayer component */}
+        {/* Using our updated VideoPlayer component */}
         <VideoPlayer 
           m3u8Url={channel.m3u8Url} 
           title={channel.name}
