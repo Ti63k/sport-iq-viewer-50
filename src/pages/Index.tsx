@@ -13,6 +13,7 @@ const Index = () => {
   
   const allChannels = getAllChannels();
   const sportsChannels = getChannelsByCategory('sports');
+  const newsChannels = getChannelsByCategory('news');
   const documentaryChannels = getChannelsByCategory('documentary');
   const entertainmentChannels = getChannelsByCategory('entertainment');
   const religiousChannels = getChannelsByCategory('religious');
@@ -71,6 +72,14 @@ const Index = () => {
               id="sports"
               title="الرياضة"
               channels={sportsChannels}
+              viewType="scroll"
+              showAll={true}
+            />
+            
+            <CategorySection 
+              id="news"
+              title="الإخبارية"
+              channels={newsChannels}
               viewType="scroll"
               showAll={true}
             />

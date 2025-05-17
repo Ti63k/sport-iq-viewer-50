@@ -43,10 +43,11 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   
   const categories = [
     { id: 'sports', name: 'الرياضة', href: '#sports' },
-    { id: 'entertainment', name: 'الترفيه', href: '#entertainment' },
+    { id: 'news', name: 'الإخبارية', href: '#news' },
     { id: 'documentary', name: 'الوثائقية', href: '#documentary' },
-    { id: 'vodu', name: 'VODU', href: '#vodu' },
+    { id: 'entertainment', name: 'الترفيه', href: '#entertainment' },
     { id: 'religious', name: 'دينية', href: '#religious' },
+    { id: 'vodu', name: 'VODU', href: '#vodu' },
   ];
   
   const sidebarClasses = `fixed inset-y-0 right-0 w-64 bg-white dark:bg-background shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
