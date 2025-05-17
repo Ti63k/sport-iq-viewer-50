@@ -16,15 +16,19 @@ type CategorySectionProps = {
   title: string;
   channels: Channel[];
   viewType?: 'grid' | 'scroll';
+  showAll?: boolean;
 };
 
 const CategorySection = ({ 
   id, 
   title, 
   channels,
-  viewType = 'scroll' 
+  viewType = 'scroll',
+  showAll = false
 }: CategorySectionProps) => {
   if (channels.length === 0) return null;
+  
+  const displayChannels = showAll ? channels : (viewType === 'grid' ? channels.slice(0, 10) : channels);
   
   return (
     <section id={id} className="category-section">
@@ -38,7 +42,7 @@ const CategorySection = ({
       
       {viewType === 'grid' ? (
         <div className="channels-grid">
-          {channels.slice(0, 10).map((channel) => (
+          {displayChannels.map((channel) => (
             <ChannelCard 
               key={channel.id}
               id={channel.id}
@@ -51,7 +55,7 @@ const CategorySection = ({
         </div>
       ) : (
         <div className="channels-scroll">
-          {channels.slice(0, 10).map((channel) => (
+          {displayChannels.map((channel) => (
             <div key={channel.id} className="channel-scroll-item">
               <ChannelCard 
                 id={channel.id}

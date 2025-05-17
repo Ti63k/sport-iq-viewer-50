@@ -72,6 +72,7 @@ const Index = () => {
               title="الرياضة"
               channels={sportsChannels}
               viewType="scroll"
+              showAll={true}
             />
             
             <CategorySection 
