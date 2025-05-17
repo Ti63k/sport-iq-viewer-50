@@ -60,7 +60,7 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <h2 className="section-title mb-6">جميع القنوات المتاحة</h2>
+            {/* Removed the heading "جميع القنوات المتاحة" as requested */}
             <CategorySection 
               id="all-channels"
               title="جميع القنوات"
