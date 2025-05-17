@@ -1,9 +1,12 @@
 
-import { useState, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
+import 'plyr/dist/plyr.css';
+import Plyr from 'plyr';
+import { Button } from '@/components/ui/button';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface VideoPlayerProps {
   m3u8Url: string;
@@ -12,215 +15,281 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<Plyr | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [hasError, setHasError] = useState(false);
+  const [showQualityDialog, setShowQualityDialog] = useState(false);
+  const [qualities, setQualities] = useState<{ height: number; index: number }[]>([]);
+  const [currentQuality, setCurrentQuality] = useState(-1);
   const { toast } = useToast();
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
 
+  // Initialize the player and HLS
   useEffect(() => {
+    let hls: Hls | null = null;
+    
     // Reset state on URL change
     setIsLoading(true);
-    setLoadingProgress(0);
     setHasError(false);
     retryCountRef.current = 0;
-    
-    return () => {
-      // Clean up all timers when component unmounts or URL changes
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    };
-  }, [m3u8Url]);
 
-  // Simulate loading progress and set timeout for stuck loading
-  useEffect(() => {
-    if (!isLoading) return;
-
-    // Start loading progress animation
-    let progress = 0;
-    progressIntervalRef.current = setInterval(() => {
-      progress += Math.random() * 3 + 1; // More randomized progress to appear more natural
-      progress = Math.min(progress, 90); // Cap at 90% until actually loaded
-      setLoadingProgress(progress);
-    }, 200);
-
-    // Set a timeout to prevent infinite loading
-    loadingTimeoutRef.current = setTimeout(() => {
-      if (videoRef.current?.readyState >= 3) {
-        videoRef.current.play()
-          .then(() => {
-            setLoadingProgress(100);
-            setIsLoading(false);
-          })
-          .catch(() => {
-            // Silent catch, don't show error here
-          });
-      } else {
-        // If taking too long, try to play anyway
-        videoRef.current?.play().catch(() => {});
-        // But also set loading to false after maximum wait time
-        setLoadingProgress(100);
-        setIsLoading(false);
+    const initPlayer = async () => {
+      if (!videoRef.current) return;
+      
+      // Destroy existing instances if they exist
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
       }
-    }, 6000); // 6s for better UX
+      
+      if (playerRef.current) {
+        playerRef.current.destroy();
+      }
 
-    return () => {
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-    };
-  }, [isLoading]);
-
-  // Set up video event listeners with more efficient handling
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleError = () => {
-      if (retryCountRef.current < maxRetries) {
-        // Auto-retry a few times before showing error
-        retryCountRef.current += 1;
-        console.log(`Auto-retrying (${retryCountRef.current}/${maxRetries})...`);
-        
-        // Short timeout before retry
-        setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.load();
-            videoRef.current.play().catch(() => {
-              // Silent catch
-            });
-          }
-        }, 1000);
-      } else {
-        setIsLoading(false);
-        setLoadingProgress(0);
-        setHasError(true);
-        
-        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        
-        toast({
-          title: "خطأ في التشغيل",
-          description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
-          variant: "destructive",
+      try {
+        // Create Plyr instance with custom controls
+        const player = new Plyr(videoRef.current, {
+          controls: [
+            'play',
+            'progress',
+            'current-time',
+            'mute',
+            'volume',
+            'settings',
+            'fullscreen'
+          ],
+          settings: ['quality', 'speed'], 
+          ratio: '16:9',
+          fullscreen: { enabled: true, iosNative: true },
+          hideControls: true,
+          autoplay: true,
+          storage: { enabled: true, key: 'iqsport-player-settings' }
         });
-      }
-    };
-    
-    const handlePlay = () => {
-      setLoadingProgress(100);
-      // Use setTimeout to create a smoother transition
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 300);
-    };
-    
-    const handleWaiting = () => {
-      // Only set loading to true if we were previously playing
-      if (!isLoading) {
-        setIsLoading(true);
-        setLoadingProgress(30); // Start at a higher value since we already loaded once
-      }
-    };
-    
-    const handleCanPlay = () => {
-      setLoadingProgress(95);
-      // Quick timeout to ensure smooth transition
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-      loadingTimeoutRef.current = setTimeout(() => {
-        if (videoRef.current?.paused) {
-          videoRef.current.play()
-            .then(() => {
-              setLoadingProgress(100);
-              setIsLoading(false);
-            })
-            .catch(e => console.log("Auto-play was prevented:", e));
-        } else {
-          setLoadingProgress(100);
-          setIsLoading(false);
-        }
-      }, 200);
-    };
-    
-    const handleProgress = () => {
-      if (video.buffered.length > 0) {
-        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-        const duration = video.duration;
+
+        playerRef.current = player;
         
-        if (duration && isFinite(duration) && !isNaN(duration)) {
-          const loadedPercentage = (bufferedEnd / duration) * 100;
-          setLoadingProgress(Math.min(loadedPercentage, 100));
-        } else {
-          // For live streams
-          if (bufferedEnd > 3) { // If we have at least 3 seconds buffered
-            setLoadingProgress(100);
-            setIsLoading(false);
+        // Setup event listeners for Plyr
+        player.on('ready', () => {
+          // Player is ready to use
+          const container = player.elements.container;
+          // Add custom button for quality selection (for manual implementation)
+          const qualityButton = document.createElement('button');
+          qualityButton.className = 'plyr__control plyr__custom-quality';
+          qualityButton.innerHTML = 'HD';
+          qualityButton.onclick = () => setShowQualityDialog(true);
+          
+          const controlBar = container?.querySelector('.plyr__controls');
+          if (controlBar) {
+            // Add before the fullscreen button
+            const fullscreenButton = controlBar.querySelector('[data-plyr="fullscreen"]');
+            if (fullscreenButton && fullscreenButton.parentNode) {
+              fullscreenButton.parentNode.insertBefore(qualityButton, fullscreenButton);
+            }
           }
+        });
+        
+        player.on('playing', () => {
+          setIsLoading(false);
+        });
+        
+        player.on('error', () => {
+          handlePlaybackError();
+        });
+        
+        // Setup HLS if supported
+        if (Hls.isSupported()) {
+          hls = new Hls({
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60,
+            fragLoadingRetryDelay: 2000,
+            manifestLoadingTimeOut: 10000,
+            manifestLoadingMaxRetry: 3,
+            debug: false
+          });
+          
+          hls.attachMedia(videoRef.current);
+          
+          hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+            hls?.loadSource(m3u8Url);
+            
+            hls?.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+              // Extract available qualities
+              const availableLevels = data.levels;
+              if (availableLevels.length > 1) {
+                const qualityOptions = availableLevels
+                  .map((level, index) => ({
+                    height: level.height,
+                    index
+                  }))
+                  .sort((a, b) => b.height - a.height); // Sort from highest to lowest
+                
+                setQualities(qualityOptions);
+                
+                // Set to auto by default
+                hls?.currentLevel = -1;
+                setCurrentQuality(-1);
+              }
+              
+              // Auto play
+              videoRef.current?.play().catch((e) => {
+                console.log("Auto-play was prevented:", e);
+                // Some browsers require user interaction, show play button prominently
+              });
+            });
+            
+            hls?.on(Hls.Events.ERROR, (event, data) => {
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    // Try to recover network error
+                    console.log('Network error, trying to recover...');
+                    hls?.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    console.log('Media error, trying to recover...');
+                    hls?.recoverMediaError();
+                    break;
+                  default:
+                    handlePlaybackError();
+                    break;
+                }
+              }
+            });
+          });
+          
+          hlsRef.current = hls;
+        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+          // For Safari where HLS is natively supported
+          videoRef.current.src = m3u8Url;
+          videoRef.current.addEventListener('loadedmetadata', () => {
+            videoRef.current?.play().catch((e) => {
+              console.log("Auto-play was prevented:", e);
+            });
+          });
+        } else {
+          // Fallback for browsers that don't support HLS
+          toast({
+            title: "تنبيه",
+            description: "متصفحك لا يدعم البث المباشر بتقنية HLS",
+            variant: "destructive",
+          });
+          setHasError(true);
         }
+        
+      } catch (error) {
+        console.error("Player initialization error:", error);
+        handlePlaybackError();
       }
     };
     
-    // Add event listeners
-    video.addEventListener('error', handleError);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('playing', handlePlay); // Added for more robust detection
-    video.addEventListener('waiting', handleWaiting);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('progress', handleProgress);
+    initPlayer();
     
-    // More aggressive auto-play strategy
-    if (video.paused) {
-      video.play().catch(() => {
-        console.log("Auto-play on mount was prevented, will try again on user interaction");
+    // Cleanup function
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [m3u8Url, toast]);
+  
+  const handlePlaybackError = () => {
+    if (retryCountRef.current < maxRetries) {
+      // Auto-retry a few times before showing error
+      retryCountRef.current += 1;
+      console.log(`Auto-retrying (${retryCountRef.current}/${maxRetries})...`);
+      
+      // Short timeout before retry
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+          videoRef.current.play().catch(() => {
+            // Silent catch
+          });
+        }
+      }, 1000);
+    } else {
+      setIsLoading(false);
+      setHasError(true);
+      
+      toast({
+        title: "خطأ في التشغيل",
+        description: "تعذر تشغيل البث المباشر. يرجى المحاولة مرة أخرى لاحقًا.",
+        variant: "destructive",
       });
     }
-    
-    return () => {
-      // Clean up event listeners
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('playing', handlePlay);
-      video.removeEventListener('waiting', handleWaiting);
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('progress', handleProgress);
-    };
-  }, [isLoading, toast]);
-
+  };
+  
   // Handle retry when there's an error
   const handleRetry = () => {
     setHasError(false);
     setIsLoading(true);
-    setLoadingProgress(0);
     retryCountRef.current = 0;
+    
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
     
     // Short timeout to ensure DOM has updated
     setTimeout(() => {
       if (videoRef.current) {
         videoRef.current.load();
-        videoRef.current.play().catch(() => {
-          // Silent catch
-        });
+        
+        // Reinitialize the player
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.attachMedia(videoRef.current);
+          hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+            hls.loadSource(m3u8Url);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              videoRef.current?.play().catch(() => {
+                // Silent catch
+              });
+            });
+          });
+          hlsRef.current = hls;
+        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+          videoRef.current.src = m3u8Url;
+          videoRef.current.play().catch(() => {
+            // Silent catch
+          });
+        }
       }
     }, 100);
   };
-
+  
+  // Change video quality
+  const changeQuality = (index: number) => {
+    if (hlsRef.current) {
+      hlsRef.current.currentLevel = index;
+      setCurrentQuality(index);
+      setShowQualityDialog(false);
+      
+      const qualityName = index === -1 
+        ? 'تلقائي' 
+        : qualities.find(q => q.index === index)?.height + 'p';
+        
+      toast({
+        title: "تم تغيير الجودة",
+        description: `تم تعيين الجودة إلى ${qualityName}`,
+      });
+    }
+  };
+  
   return (
     <div className="aspect-video bg-black rounded-xl overflow-hidden relative">
-      {/* Loading overlay with improved progress bar */}
+      {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-10">
-          <div className="text-center text-white w-full px-6 max-w-md">
-            <Loader2 className="h-12 w-12 mx-auto animate-spin mb-4" />
-            <p className="text-lg mb-4">جاري تحميل البث المباشر...</p>
-            {/* Updated progress bar component */}
-            <Progress 
-              value={loadingProgress} 
-              className="h-2 mb-1"
-            />
-            <p className="text-xs text-gray-400 text-left rtl:text-right">{Math.round(loadingProgress)}%</p>
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
+          <Loader2 className="h-12 w-12 animate-spin text-iqpurple mb-4" />
+          <p className="text-white text-lg">جاري تحميل البث المباشر...</p>
         </div>
       )}
       
@@ -229,30 +298,108 @@ export function VideoPlayer({ m3u8Url, title }: VideoPlayerProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10">
           <div className="text-center text-white w-full px-6 max-w-md">
             <p className="text-lg mb-4">حدث خطأ أثناء تحميل البث المباشر</p>
-            <button 
+            <Button 
               onClick={handleRetry}
-              className="px-4 py-2 bg-iqpurple hover:bg-iqpurple/90 rounded-md text-white transition-colors"
+              variant="default"
+              className="bg-iqpurple hover:bg-iqpurple/90 flex items-center gap-2"
             >
-              إعادة المحاولة
-            </button>
+              <RefreshCw size={16} /> إعادة المحاولة
+            </Button>
           </div>
         </div>
       )}
       
-      {/* Video player with optimized attributes */}
+      {/* Video element */}
       <video 
         ref={videoRef}
-        className="w-full h-full"
-        controls
-        autoPlay
+        className="w-full h-full plyr-iqsport"
+        crossOrigin="anonymous"
         playsInline
-        preload="auto"
-        poster="https://via.placeholder.com/1280x720/000000/FFFFFF?text=Loading..."
+        controls
+        poster="https://via.placeholder.com/1280x720/000000/FFFFFF?text=IQ+Sport"
         title={title}
       >
         <source src={m3u8Url} type="application/x-mpegURL" />
         متصفحك لا يدعم تشغيل الفيديو.
       </video>
+      
+      {/* Quality Selection Dialog */}
+      <Dialog open={showQualityDialog} onOpenChange={setShowQualityDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>اختيار جودة البث</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Button 
+                onClick={() => changeQuality(-1)} 
+                variant={currentQuality === -1 ? "default" : "outline"}
+                className={currentQuality === -1 ? "bg-iqpurple" : ""}
+              >
+                تلقائي
+              </Button>
+              
+              {qualities.map((quality) => (
+                <Button
+                  key={quality.index}
+                  onClick={() => changeQuality(quality.index)}
+                  variant={currentQuality === quality.index ? "default" : "outline"}
+                  className={currentQuality === quality.index ? "bg-iqpurple" : ""}
+                >
+                  {quality.height}p
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Custom CSS for Plyr */}
+      <style jsx global>{`
+        /* Custom Plyr Styling for IQ Sport */
+        .plyr--full-ui {
+          --plyr-color-main: #5B3CC4;
+          --plyr-range-thumb-background: #5B3CC4;
+          --plyr-range-fill-background: #5B3CC4;
+          --plyr-video-control-background-hover: rgba(91, 60, 196, 0.8);
+        }
+        
+        .plyr__controls {
+          border-radius: 0.5rem;
+          background: rgba(0, 0, 0, 0.8) !important;
+        }
+        
+        .plyr__control--overlaid {
+          background: #5B3CC4 !important;
+        }
+        
+        .plyr__menu__container {
+          background: #1F1F1F !important;
+          border-radius: 0.5rem !important;
+        }
+        
+        .plyr__menu__container .plyr__control {
+          color: white !important;
+        }
+        
+        .plyr__menu__container .plyr__control--forward {
+          border-color: #333 !important;
+        }
+        
+        .plyr__menu__container .plyr__control--back {
+          border-color: #333 !important;
+        }
+        
+        .plyr--video .plyr__controls {
+          padding: 12px 10px 10px 10px !important;
+        }
+        
+        .plyr__custom-quality {
+          font-weight: bold;
+          font-size: 14px;
+          color: white;
+        }
+      `}</style>
       
       {/* Fallback for unsupported browsers */}
       <noscript>

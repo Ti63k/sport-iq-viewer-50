@@ -1,0 +1,123 @@
+
+/* Player custom skin for IQ Sport */
+.plyr-iqsport {
+  --plyr-color-main: #5B3CC4;
+  --plyr-audio-control-background-hover: rgba(91, 60, 196, 0.8);
+  --plyr-audio-control-color-hover: #fff;
+  --plyr-audio-progress-buffered-background: rgba(255, 255, 255, 0.3);
+  --plyr-audio-range-thumb-background: #fff;
+  --plyr-audio-range-track-background: rgba(255, 255, 255, 0.3);
+  --plyr-video-progress-buffered-background: rgba(255, 255, 255, 0.3);
+  
+  /* Control colors */
+  --plyr-video-control-color: #fff;
+  --plyr-video-control-color-hover: #fff;
+  --plyr-video-control-background-hover: var(--plyr-color-main);
+  
+  /* Range inputs */
+  --plyr-range-thumb-background: var(--plyr-color-main);
+  --plyr-range-thumb-shadow: 0 1px 1px rgba(35, 40, 47, 0.15), 0 0 0 1px rgba(35, 40, 47, 0.2);
+  --plyr-range-thumb-active-shadow-width: 3px;
+  --plyr-range-track-background: rgba(255, 255, 255, 0.25);
+  --plyr-range-fill-background: var(--plyr-color-main);
+
+  /* Menu */
+  --plyr-menu-background: rgba(28, 28, 28, 0.95);
+  --plyr-menu-color: #fff;
+  --plyr-menu-border-color: rgba(255, 255, 255, 0.15);
+  --plyr-menu-radius: 6px;
+  --plyr-menu-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  
+  /* Font sizes */
+  --plyr-font-size-small: 13px;
+  --plyr-font-size-base: 15px;
+  --plyr-font-size-large: 17px;
+  --plyr-font-family: "Cairo", "Tajawal", sans-serif;
+  
+  /* Transitions */
+  --plyr-transition-duration: 250ms;
+}
+
+/* Custom controls layout for RTL */
+.plyr__controls {
+  direction: ltr !important;
+}
+
+/* Custom play button overlay */
+.plyr__control--overlaid {
+  background: rgba(91, 60, 196, 0.9) !important;
+  transition: transform 0.2s ease, background 0.2s ease !important;
+}
+
+.plyr__control--overlaid:hover {
+  background: rgba(91, 60, 196, 1) !important;
+  transform: scale(1.1) !important;
+}
+
+/* Loading spinner */
+.plyr__control--overlaid .plyr__control__icon {
+  transform: scale(1.5);
+}
+
+/* Custom buffer indicator */
+.plyr--loading .plyr__progress__buffer {
+  background-image: linear-gradient(
+    -45deg,
+    rgba(91, 60, 196, 0.6) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(91, 60, 196, 0.6) 50%,
+    rgba(91, 60, 196, 0.6) 75%,
+    transparent 75%,
+    transparent
+  );
+}
+
+/* Enhanced control bar aesthetics */
+.plyr--video .plyr__controls {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8)) !important;
+  padding: 20px 12px 12px 12px !important;
+}
+
+/* Quality selection button */
+.plyr__custom-quality {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  border-radius: 3px;
+  vertical-align: middle;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.plyr__custom-quality:hover {
+  background-color: var(--plyr-video-control-background-hover);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .plyr__controls .plyr__controls__item.plyr__time {
+    display: none;
+  }
+  
+  .plyr__controls .plyr__controls__item.plyr__control--next {
+    display: none;
+  }
+  
+  .plyr__custom-quality {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+}
+
+/* Quality dialog styling */
+.quality-dialog {
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  padding: 10px;
+  color: white;
+}

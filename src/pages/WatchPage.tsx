@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -27,6 +26,24 @@ const WatchPage = () => {
       
       if (channelData) {
         setChannel(channelData);
+        
+        // Save to localStorage for recent viewing history
+        try {
+          const recentChannels = JSON.parse(localStorage.getItem('recentChannels') || '[]');
+          // Add to recent if not already there
+          if (!recentChannels.some((ch: any) => ch.id === channelData.id)) {
+            recentChannels.unshift({
+              id: channelData.id,
+              name: channelData.name,
+              logo: channelData.logo,
+              timestamp: new Date().toISOString()
+            });
+            // Keep only last 5 channels
+            localStorage.setItem('recentChannels', JSON.stringify(recentChannels.slice(0, 5)));
+          }
+        } catch (e) {
+          console.log('Could not save to localStorage');
+        }
         
         // Get related channels from the same category
         if (channelData.category.length > 0) {
@@ -110,7 +127,7 @@ const WatchPage = () => {
           <h1 className="text-2xl font-bold">{channel.name}</h1>
         </div>
         
-        {/* Using our updated VideoPlayer component */}
+        {/* Using our new enhanced VideoPlayer component */}
         <VideoPlayer 
           m3u8Url={channel.m3u8Url} 
           title={channel.name}
@@ -118,7 +135,7 @@ const WatchPage = () => {
         
         <div className="mb-6 mt-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            قناة رياضية متخصصة في بث الأحداث الرياضية المباشرة
+            قناة رياضية م��خصصة في بث الأحداث الرياضية المباشرة
           </p>
         </div>
         
