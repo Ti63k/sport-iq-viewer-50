@@ -10,7 +10,8 @@ type ChannelCardProps = {
   isLive?: boolean;
 };
 
-const ChannelCard = memo(({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProps) => {
+// Define the component as a regular function first, then wrap it with memo
+function ChannelCard({ id, name, logo, m3u8Url, isLive = true }: ChannelCardProps) {
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   
@@ -54,8 +55,14 @@ const ChannelCard = memo(({ id, name, logo, m3u8Url, isLive = true }: ChannelCar
       </div>
     </div>
   );
-});
+}
 
-ChannelCard.displayName = 'ChannelCard';
+// Export the memoized version
+const MemoizedChannelCard = memo(ChannelCard);
 
-export default ChannelCard;
+// Make sure to set the displayName
+MemoizedChannelCard.displayName = 'ChannelCard';
+
+// Export the memoized component as default
+export default MemoizedChannelCard;
+
